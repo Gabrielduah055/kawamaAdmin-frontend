@@ -1,4 +1,40 @@
-# KawamaAdminFrontend
+# Kawama Admin Frontend
+
+Angular 19 administration console for the Kawama storefront. The interface uses Tailwind CSS 4 and connects to the Kawama API for owner authentication, product management, category management, Cloudinary uploads, and review moderation.
+
+## Local development
+
+Start the Kawama API on `http://localhost:3000` first, then start this project:
+
+```bash
+npm install
+npm start -- --port 4201
+```
+
+Open `http://localhost:4201`. The Angular development server proxies `/api` to the local API, so the admin can run on any local port without a CORS mismatch. The proxy target lives in `proxy.conf.json`; production URLs live in `src/environments/environment.production.ts`.
+
+The authentication token is stored in `sessionStorage`, added to Kawama API calls through an HTTP interceptor, and removed when the browser tab closes or the API returns an unauthorized response.
+
+## Admin routes
+
+- `/login`
+- `/dashboard`
+- `/products`
+- `/products/new`
+- `/products/:id/edit`
+- `/categories`
+- `/reviews`
+
+## Verification
+
+```bash
+npm run build
+npm test -- --watch=false --browsers=ChromeHeadless
+```
+
+The API repository also includes a Postman collection that can be used to verify the backend contract before integration testing.
+
+## Angular CLI reference
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.25.
 

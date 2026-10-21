@@ -1,0 +1,128 @@
+<form [formGroup]="form" (ngSubmit)="save()" novalidate>
+  <header class="flex flex-col gap-4 border-b border-line pb-6 xl:flex-row xl:items-end xl:justify-between">
+    <div>
+      <a class="inline-flex items-center gap-1 text-xs font-bold text-kawama hover:text-kawama-dark" routerLink="/products"><i class="uil uil-arrow-left" aria-hidden="true"></i>Back to products</a>
+      <h1 class="page-heading mt-3">{{ isEditing ? 'Edit product' : 'Add product' }}</h1>
+      <p class="page-copy">{{ isEditing ? 'Update catalog details, inventory, and publishing status.' : 'Create a product and prepare it for the Kawama storefront.' }}</p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      @if (previewUrl) { <a class="btn btn-secondary" [href]="previewUrl" target="_blank" rel="noopener">View storefront</a> }
+      <a class="btn btn-secondary" routerLink="/products"><i class="uil uil-times" aria-hidden="true"></i>Cancel</a>
+      <button class="btn btn-primary" type="submit" [disabled]="saving || loading"><i class="uil" [class.uil-save]="!saving" [class.uil-spinner-alt]="saving" [class.animate-spin]="saving" aria-hidden="true"></i>{{ saving ? 'Saving...' : (isEditing ? 'Save changes' : 'Create product') }}</button>
+    </div>
+  </header>
+
+  @if (loadError) {
+    <section class="mt-6 rounded-lg border border-red-300 bg-red-50 p-5" role="alert"><h2 class="font-bold text-red-900">The product editor could not be loaded</h2><p class="mt-1 text-sm leading-6 text-red-800">{{ loadError }}</p><button class="btn btn-secondary mt-4" type="button" (click)="load()"><i class="uil uil-redo" aria-hidden="true"></i>Try again</button></section>
+  } @else if (loading) {
+    <app-loading-spinner class="mt-7 block" label="Loading product editor..." />
+  } @else {
+    @if (submitError) {
+      <section class="mt-6 rounded-lg border border-red-300 bg-red-50 px-5 py-4" role="alert"><p class="font-bold text-red-900">This product could not be saved.</p><p class="mt-1 text-sm leading-6 text-red-800">{{ submitError }}</p></section>
+    }
+    @if (publishingError) {
+      <section class="mt-6 rounded-lg border border-amber-300 bg-amber-50 px-5 py-4" role="alert"><p class="font-bold text-amber-900">This product is not ready to publish.</p><p class="mt-1 text-sm leading-6 text-amber-800">{{ publishingError }}</p></section>
+    }
+
+    <div class="mt-7 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div class="grid gap-6">
+        <section class="panel p-5 sm:p-6" aria-labelledby="identity-heading">
+          <div class="border-b border-line pb-4"><h2 class="text-base font-bold text-ink" id="identity-heading">Product identity</h2><p class="mt-1 text-xs leading-5 text-muted">Customer-facing names and descriptions.</p></div>
+          <div class="mt-5 grid gap-5 sm:grid-cols-2">
+            <div class="sm:col-span-2"><label class="field-label" for="name">Product name</label><input class="field" id="name" formControlName="name" maxlength="120" (blur)="suggestSlug()" /><p class="field-hint">Use the name customers will see throughout the store.</p>@if (invalid('name')) { <p class="field-error">Enter a product name with at least 2 characters.</p> }</div>
+            <div><label class="field-label" for="slug">URL slug</label><input class="field disabled:bg-slate-100 disabled:text-muted" id="slug" formControlName="slug" maxlength="100" [readonly]="isEditing" /><p class="field-hint">Lowercase letters, numbers, and hyphens only. It cannot change later.</p>@if (invalid('slug')) { <p class="field-error">Use a valid slug such as cast-iron-pan.</p> }</div>
+            <div><label class="field-label" for="category">Category</label><select class="field" id="category" formControlName="categoryId"><option value="">Select a category</option>@for (category of activeCategories; track category.id) { <option [value]="category.id">{{ category.name }}</option> }</select>@if (invalid('categoryId')) { <p class="field-error">Select a category.</p> }</div>
+            <div class="sm:col-span-2"><label class="field-label" for="short-description">Short description</label><textarea class="field min-h-24!" id="short-description" formControlName="shortDescription" maxlength="240" rows="3"></textarea><p class="field-hint">Write one concise sentence for product cards and the area below the price. {{ form.get('shortDescription')?.value?.length || 0 }}/240</p></div>
+            <div class="sm:col-span-2"><label class="field-label" for="description">Product overview</label><textarea class="field min-h-36!" id="description" formControlName="description" maxlength="5000" rows="5"></textarea><p class="field-hint">Keep this to one or two short paragraphs. Put individual benefits in Key features and factual values in Specifications. {{ form.get('description')?.value?.length || 0 }}/5000</p></div>
+          </div>
+        </section>
+
+        <section class="panel p-5 sm:p-6" aria-labelledby="pricing-heading">
+          <div class="border-b border-line pb-4"><h2 class="text-base font-bold text-ink" id="pricing-heading">Pricing and inventory</h2><p class="mt-1 text-xs leading-5 text-muted">Prices are entered in Ghanaian cedi.</p></div>
+          <div class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div><label class="field-label" for="price">Price (GHS)</label><input class="field" id="price" type="number" formControlName="price" min="0" step="0.01" />@if (invalid('price')) { <p class="field-error">Enter a valid non-negative price.</p> }</div>
+            <div><label class="field-label" for="compare-price">Compare-at price</label><input class="field" id="compare-price" type="number" formControlName="compareAtPrice" min="0" step="0.01" /><p class="field-hint">Optional. Must be higher than the price.</p></div>
+            <div><label class="field-label" for="stock">Stock quantity</label><input class="field" id="stock" type="number" formControlName="stockQuantity" min="0" step="1" /></div>
+            <div><label class="field-label" for="threshold">Low-stock alert</label><input class="field" id="threshold" type="number" formControlName="lowStockThreshold" min="0" step="1" /></div>
+          </div>
+        </section>
+
+        <section class="panel p-5 sm:p-6" aria-labelledby="media-heading">
+          <div class="flex flex-col gap-4 border-b border-line pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div><h2 class="text-base font-bold text-ink" id="media-heading">Product images</h2><p class="mt-1 text-xs leading-5 text-muted">Upload up to 8 images. The first image is the storefront cover.</p></div>
+            <label class="btn btn-secondary" [class.opacity-55]="uploading || images.length >= 8"><i class="uil" [class.uil-upload]="!uploading" [class.uil-spinner-alt]="uploading" [class.animate-spin]="uploading" aria-hidden="true"></i>{{ uploading ? 'Uploading...' : 'Upload images' }}<input class="sr-only" type="file" accept="image/*" multiple [disabled]="uploading || images.length >= 8" (change)="uploadFiles($event)" /></label>
+          </div>
+          @if (uploadError) { <p class="mt-4 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">{{ uploadError }}</p> }
+          @if (images.length) {
+            <div class="mt-5 grid gap-4 sm:grid-cols-2">
+              @for (image of images; track image.src; let index = $index) {
+                <article class="overflow-hidden rounded-lg border border-line bg-slate-50">
+                  <div class="relative aspect-[4/3] bg-white"><img class="h-full w-full object-contain" [src]="image.src" [alt]="image.alt" />@if (index === 0) { <span class="absolute top-2 left-2 rounded-md bg-nav px-2 py-1 text-[10px] font-bold text-white">Cover image</span> }</div>
+                  <div class="border-t border-line bg-white p-3">
+                    <label class="text-xs font-bold text-ink" [for]="'image-alt-' + index">Alternative text</label><input class="field mt-2 min-h-10" [id]="'image-alt-' + index" [value]="image.alt" maxlength="200" (input)="updateImageAlt(index, $event)" />
+                    <div class="mt-3 flex flex-wrap gap-2"><button class="btn btn-secondary min-h-8 px-2.5 py-1 text-xs" type="button" [disabled]="index === 0" (click)="moveImage(index, -1)"><i class="uil uil-arrow-left" aria-hidden="true"></i>Move left</button><button class="btn btn-secondary min-h-8 px-2.5 py-1 text-xs" type="button" [disabled]="index === images.length - 1" (click)="moveImage(index, 1)">Move right<i class="uil uil-arrow-right" aria-hidden="true"></i></button><button class="btn btn-quiet min-h-8 px-2.5 py-1 text-xs text-red-700!" type="button" (click)="removeImage(index)"><i class="uil uil-trash-alt" aria-hidden="true"></i>Remove</button></div>
+                  </div>
+                </article>
+              }
+            </div>
+          } @else {
+            <div class="mt-5 rounded-lg border border-dashed border-slate-300 px-5 py-12 text-center"><p class="font-bold text-ink">No product images yet</p><p class="mt-2 text-sm text-muted">Images are required before an active product can be published.</p></div>
+          }
+        </section>
+
+        <section class="panel p-5 sm:p-6" aria-labelledby="details-heading">
+          <div class="border-b border-line pb-4"><h2 class="text-base font-bold text-ink" id="details-heading">Key features</h2><p class="mt-1 max-w-2xl text-xs leading-5 text-muted">Each row becomes one orange bullet on the storefront. Add one short benefit per row, ideally 2 to 8 words.</p></div>
+          <div class="mt-5 divide-y divide-line border-y border-line" formArrayName="details">
+            @for (control of details.controls; track control; let index = $index) {
+              <div class="grid gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                <div><label class="field-label" [for]="'detail-' + index">Feature {{ index + 1 }}</label><input class="field mt-1" [id]="'detail-' + index" [formControlName]="index" [maxlength]="keyFeatureMaxLength" placeholder="Example: Four speed settings" /><p class="field-hint">{{ control.value?.length || 0 }}/{{ keyFeatureMaxLength }}</p>@if (control.touched && control.invalid) { <p class="field-error">Keep this feature under {{ keyFeatureMaxLength }} characters.</p> }</div>
+                <button class="btn btn-quiet min-h-10 text-red-700!" type="button" (click)="removeDetail(index)" [attr.aria-label]="'Remove feature ' + (index + 1)"><i class="uil uil-trash-alt" aria-hidden="true"></i><span class="sm:sr-only">Remove</span></button>
+              </div>
+            } @empty { <div class="py-6 text-center"><p class="text-sm font-bold text-ink">No key features added</p><p class="mt-1 text-xs text-muted">Add separate features to create the bullet list shown on the product page.</p></div> }
+          </div>
+          <div class="mt-4 flex justify-end"><button class="btn btn-secondary min-h-9" type="button" (click)="addDetail()" [disabled]="details.length >= 20"><i class="uil uil-plus" aria-hidden="true"></i>Add feature</button></div>
+        </section>
+
+        <section class="panel p-5 sm:p-6" aria-labelledby="spec-heading">
+          <div class="border-b border-line pb-4"><h2 class="text-base font-bold text-ink" id="spec-heading">Specifications</h2><p class="mt-1 max-w-2xl text-xs leading-5 text-muted">Add a label and value for each fact. These rows populate the specification table beside the product overview.</p></div>
+          <div class="mt-5 divide-y divide-line border-y border-line" formArrayName="specifications">
+            @for (group of specifications.controls; track group; let index = $index) {
+              <div class="grid gap-3 py-4 sm:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)_auto] sm:items-end" [formGroupName]="index"><div><label class="field-label" [for]="'spec-label-' + index">Label</label><input class="field mt-1" [id]="'spec-label-' + index" formControlName="label" maxlength="80" placeholder="Example: Capacity" /></div><div><label class="field-label" [for]="'spec-value-' + index">Value</label><input class="field mt-1" [id]="'spec-value-' + index" formControlName="value" maxlength="200" placeholder="Example: 6-cup glass jar" /></div><button class="btn btn-quiet min-h-10 text-red-700!" type="button" (click)="removeSpecification(index)" [attr.aria-label]="'Remove specification ' + (index + 1)"><i class="uil uil-trash-alt" aria-hidden="true"></i><span class="sm:sr-only">Remove</span></button></div>
+            } @empty { <p class="text-sm text-muted">No specifications have been added.</p> }
+          </div>
+          <div class="mt-4 flex justify-end"><button class="btn btn-secondary min-h-9" type="button" (click)="addSpecification()" [disabled]="specifications.length >= 30"><i class="uil uil-plus" aria-hidden="true"></i>Add specification</button></div>
+        </section>
+      </div>
+
+      <aside class="grid gap-6 xl:sticky xl:top-24">
+        <section class="panel p-5" aria-labelledby="publishing-heading">
+          <h2 class="text-base font-bold text-ink" id="publishing-heading">Publishing</h2>
+          <div class="mt-5"><label class="field-label" for="status">Product status</label><select class="field" id="status" formControlName="status"><option value="draft">Draft</option><option value="active">Active</option></select><p class="field-hint">Active products are immediately available to the customer storefront.</p></div>
+          @if (isEditing && currentProduct?.status === 'archived') { <p class="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">This archived product must be restored from the product list before editing.</p> }
+        </section>
+
+        <section class="panel p-5" aria-labelledby="merchandising-heading">
+          <h2 class="text-base font-bold text-ink" id="merchandising-heading">Merchandising</h2>
+          <div class="mt-5 grid gap-4">
+            <label class="flex items-start gap-3"><input class="mt-0.5 h-4 w-4 accent-kawama" type="checkbox" formControlName="featured" /><span><strong class="block text-sm text-ink">Featured</strong><small class="mt-1 block leading-5 text-muted">Prioritize this product in featured sections.</small></span></label>
+            <label class="flex items-start gap-3"><input class="mt-0.5 h-4 w-4 accent-kawama" type="checkbox" formControlName="isNew" /><span><strong class="block text-sm text-ink">New arrival</strong><small class="mt-1 block leading-5 text-muted">Show the new-product treatment.</small></span></label>
+            <label class="flex items-start gap-3"><input class="mt-0.5 h-4 w-4 accent-kawama" type="checkbox" formControlName="isBestSeller" /><span><strong class="block text-sm text-ink">Best seller</strong><small class="mt-1 block leading-5 text-muted">Mark as a popular catalog item.</small></span></label>
+          </div>
+        </section>
+
+        <section class="panel p-5" aria-labelledby="recommendation-heading">
+          <h2 class="text-base font-bold text-ink" id="recommendation-heading">Related categories</h2><p class="mt-1 text-xs leading-5 text-muted">Choose categories used for storefront recommendations.</p>
+          <label class="sr-only" for="complementary-categories">Related categories</label>
+          <select class="field mt-4 min-h-36 py-2" id="complementary-categories" formControlName="complementaryCategoryIds" multiple>
+            @for (category of activeCategories; track category.id) { <option class="rounded px-2 py-1.5" [value]="category.id">{{ category.name }}</option> }
+          </select>
+          <p class="field-hint">Hold Ctrl or Command to select several categories.</p>
+        </section>
+      </aside>
+    </div>
+
+    <footer class="mt-7 flex flex-col-reverse gap-3 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-end">
+      <a class="btn btn-secondary" routerLink="/products"><i class="uil uil-times" aria-hidden="true"></i>Cancel</a><button class="btn btn-primary" type="submit" [disabled]="saving"><i class="uil" [class.uil-save]="!saving" [class.uil-spinner-alt]="saving" [class.animate-spin]="saving" aria-hidden="true"></i>{{ saving ? 'Saving product...' : (isEditing ? 'Save changes' : 'Create product') }}</button>
+    </footer>
+  }
+</form>

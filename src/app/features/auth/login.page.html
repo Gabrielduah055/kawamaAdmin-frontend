@@ -1,0 +1,67 @@
+<main class="grid min-h-[100dvh] bg-white lg:grid-cols-[minmax(360px,0.9fr)_minmax(560px,1.1fr)]">
+  <section class="relative hidden overflow-hidden bg-nav px-12 py-14 text-white lg:flex lg:flex-col lg:justify-between" aria-label="Kawama administration">
+    <div class="relative z-10 flex items-center gap-3">
+      <span class="grid h-10 w-10 place-items-center rounded-lg bg-kawama text-lg font-black">K</span>
+      <div>
+        <strong class="block text-base font-black tracking-[0.16em]">KAWAMA</strong>
+        <span class="text-[10px] font-bold tracking-[0.2em] text-slate-400">ADMINISTRATION</span>
+      </div>
+    </div>
+
+    <div class="relative z-10 max-w-lg pb-12">
+      <p class="mb-5 text-xs font-bold uppercase tracking-[0.16em] text-kawama">Catalog operations</p>
+      <h1 class="max-w-md text-4xl font-bold leading-[1.08] tracking-[-0.04em] xl:text-5xl">Keep every product ready for the storefront.</h1>
+      <p class="mt-5 max-w-md text-base leading-7 text-slate-300">Manage products, categories, inventory, and customer reviews from one focused workspace.</p>
+    </div>
+
+    <div class="absolute right-[-18%] bottom-[-24%] h-[480px] w-[480px] rounded-full border-[80px] border-kawama/10" aria-hidden="true"></div>
+  </section>
+
+  <section class="flex min-h-[100dvh] items-center justify-center bg-canvas px-5 py-10 sm:px-10">
+    <div class="w-full max-w-md">
+      <div class="mb-10 flex items-center gap-3 lg:hidden">
+        <span class="grid h-10 w-10 place-items-center rounded-lg bg-kawama text-lg font-black text-white">K</span>
+        <strong class="text-base font-black tracking-[0.16em] text-ink">KAWAMA</strong>
+      </div>
+
+      <p class="text-xs font-bold uppercase tracking-[0.14em] text-kawama">Owner access</p>
+      <h2 class="mt-3 text-3xl font-bold tracking-[-0.035em] text-ink">Sign in to the admin</h2>
+      <p class="mt-2 text-sm leading-6 text-muted">Use the owner account configured for the Kawama API.</p>
+
+      @if (expired) {
+        <div class="mt-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-5 text-amber-900">Your session expired. Sign in again to continue.</div>
+      }
+      @if (errorMessage) {
+        <div class="mt-6 flex gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm leading-5 text-red-800" role="alert">
+          <i class="uil uil-exclamation-octagon mt-0.5 text-lg leading-none" aria-hidden="true"></i>
+          <span>{{ errorMessage }}</span>
+        </div>
+      }
+
+      <form class="mt-8 grid gap-5" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div>
+          <label class="field-label" for="email">Email address</label>
+          <input class="field" id="email" type="email" formControlName="email" autocomplete="username" placeholder="owner@kawama.com" />
+          @if (form.controls.email.touched && form.controls.email.invalid) {
+            <p class="field-error">Enter a valid email address.</p>
+          }
+        </div>
+
+        <div>
+          <label class="field-label" for="password">Password</label>
+          <input class="field" id="password" type="password" formControlName="password" autocomplete="current-password" placeholder="At least 8 characters" />
+          @if (form.controls.password.touched && form.controls.password.invalid) {
+            <p class="field-error">Password must contain at least 8 characters.</p>
+          }
+        </div>
+
+        <button class="btn btn-primary mt-2 w-full min-h-12" type="submit" [disabled]="loading">
+          <i class="uil" [class.uil-signin]="!loading" [class.uil-spinner-alt]="loading" [class.animate-spin]="loading" aria-hidden="true"></i>
+          {{ loading ? 'Signing in...' : 'Sign in' }}
+        </button>
+      </form>
+
+      <p class="mt-8 text-xs leading-5 text-muted">Access is limited to the configured Kawama owner account. Your session is cleared when this browser tab is closed.</p>
+    </div>
+  </section>
+</main>

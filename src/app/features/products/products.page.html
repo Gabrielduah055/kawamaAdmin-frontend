@@ -1,0 +1,93 @@
+<header class="flex flex-col gap-4 border-b border-line pb-6 sm:flex-row sm:items-end sm:justify-between">
+  <div><h1 class="page-heading">Products</h1><p class="page-copy">Manage catalog details, stock, merchandising, and publishing status.</p></div>
+  <a class="btn btn-primary" routerLink="/products/new"><i class="uil uil-plus" aria-hidden="true"></i>Add product</a>
+</header>
+
+<section class="mt-6 grid gap-3 rounded-lg border border-line bg-white p-4 lg:grid-cols-[minmax(240px,1fr)_190px_220px_auto]" aria-label="Product filters">
+  <form class="flex gap-2" (ngSubmit)="applySearch()">
+    <label class="sr-only" for="product-search">Search products</label>
+    <input class="field" id="product-search" type="search" [formControl]="search" placeholder="Search by name or slug" />
+    <button class="btn btn-secondary" type="submit"><i class="uil uil-search" aria-hidden="true"></i>Search</button>
+  </form>
+  <div>
+    <label class="sr-only" for="status-filter">Status</label>
+    <select class="field" id="status-filter" [value]="status" (change)="setStatus($event)">
+      <option value="">All statuses</option><option value="active">Active</option><option value="draft">Draft</option><option value="archived">Archived</option>
+    </select>
+  </div>
+  <div>
+    <label class="sr-only" for="category-filter">Category</label>
+    <select class="field" id="category-filter" [value]="categoryId" (change)="setCategory($event)">
+      <option value="">All categories</option>
+      @for (category of categories; track category.id) { <option [value]="category.id">{{ category.name }}</option> }
+    </select>
+  </div>
+  <button class="btn btn-quiet" type="button" (click)="clearFilters()"><i class="uil uil-filter-slash" aria-hidden="true"></i>Clear filters</button>
+</section>
+
+@if (errorMessage) {
+  <section class="mt-6 rounded-lg border border-red-300 bg-red-50 p-5" role="alert">
+    <h2 class="font-bold text-red-900">Products could not be loaded</h2><p class="mt-1 text-sm leading-6 text-red-800">{{ errorMessage }}</p>
+    <button class="btn btn-secondary mt-4" type="button" (click)="load()"><i class="uil uil-redo" aria-hidden="true"></i>Try again</button>
+  </section>
+} @else if (loading) {
+  <app-loading-spinner class="mt-6 block" label="Loading products..." />
+} @else if (products.length) {
+  <section class="panel mt-6 overflow-hidden">
+    <div class="hidden overflow-x-auto lg:block">
+      <table class="w-full min-w-[1050px] border-collapse">
+        <thead class="table-head"><tr><th class="px-5 py-3">Product</th><th class="px-4 py-3">Category</th><th class="px-4 py-3">Price</th><th class="px-4 py-3">Inventory</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Updated</th><th class="px-5 py-3 text-right">Actions</th></tr></thead>
+        <tbody class="divide-y divide-line">
+          @for (product of products; track product.id) {
+            <tr class="align-middle hover:bg-slate-50/60">
+              <td class="px-5 py-3.5">
+                <div class="flex items-center gap-3">
+                  <div class="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg border border-line bg-slate-50">
+                    @if (product.images[0]; as image) { <img class="h-full w-full object-cover" [src]="image.src" [alt]="image.alt" width="48" height="48" /> } @else { <span class="text-xs font-black text-slate-400">{{ product.name.charAt(0) }}</span> }
+                  </div>
+                  <div class="min-w-0"><a class="block max-w-64 truncate font-bold text-ink hover:text-kawama" [routerLink]="['/products', product.id, 'edit']">{{ product.name }}</a><p class="mt-1 max-w-64 truncate text-xs text-muted">/{{ product.slug }}</p></div>
+                </div>
+              </td>
+              <td class="px-4 py-3.5 text-sm text-muted">{{ product.category }}</td>
+              <td class="px-4 py-3.5"><span class="font-bold text-ink">{{ product.price | currency:'GHS':'symbol-narrow':'1.2-2':'en-GH' }}</span></td>
+              <td class="px-4 py-3.5"><p class="font-bold text-ink">{{ product.stockQuantity }}</p><span class="mt-1 inline-block rounded-md px-2 py-0.5 text-[11px] font-bold" [ngClass]="stockClass(product.stockLevel)">{{ stockLabel(product.stockLevel) }}</span></td>
+              <td class="px-4 py-3.5"><span class="rounded-md px-2 py-1 text-xs font-bold capitalize" [ngClass]="statusClass(product.status)">{{ product.status }}</span></td>
+              <td class="px-4 py-3.5 text-xs text-muted">{{ product.updatedAt | date:'mediumDate' }}</td>
+              <td class="px-5 py-3.5"><div class="flex justify-end gap-2"><a class="btn btn-secondary min-h-9 px-3" [routerLink]="['/products', product.id, 'edit']"><i class="uil uil-pen" aria-hidden="true"></i>Edit</a><button class="btn h-9 min-h-9 w-9 p-0" [class.btn-danger]="product.status !== 'archived'" [class.btn-secondary]="product.status === 'archived'" type="button" [attr.aria-label]="(product.status === 'archived' ? 'Restore ' : 'Archive ') + product.name" [attr.title]="product.status === 'archived' ? 'Restore product' : 'Archive product'" (click)="requestAction(product)"><i class="uil text-base" [class.uil-redo]="product.status === 'archived'" [class.uil-archive]="product.status !== 'archived'" aria-hidden="true"></i></button></div></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="divide-y divide-line lg:hidden">
+      @for (product of products; track product.id) {
+        <article class="p-4">
+          <div class="flex gap-3">
+            <div class="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-lg border border-line bg-slate-50">@if (product.images[0]; as image) { <img class="h-full w-full object-cover" [src]="image.src" [alt]="image.alt" /> } @else { <span class="font-black text-slate-400">{{ product.name.charAt(0) }}</span> }</div>
+            <div class="min-w-0 flex-1"><h2 class="truncate font-bold text-ink">{{ product.name }}</h2><p class="mt-1 text-xs text-muted">{{ product.category }}</p><div class="mt-3 flex flex-wrap gap-2"><span class="rounded-md px-2 py-1 text-xs font-bold capitalize" [ngClass]="statusClass(product.status)">{{ product.status }}</span><span class="rounded-md px-2 py-1 text-xs font-bold" [ngClass]="stockClass(product.stockLevel)">{{ product.stockQuantity }} in stock</span></div></div>
+          </div>
+          <div class="mt-4 flex gap-2"><a class="btn btn-secondary flex-1" [routerLink]="['/products', product.id, 'edit']"><i class="uil uil-pen" aria-hidden="true"></i>Edit</a><button class="btn h-10 min-h-10 w-10 shrink-0 p-0" [class.btn-danger]="product.status !== 'archived'" [class.btn-secondary]="product.status === 'archived'" type="button" [attr.aria-label]="(product.status === 'archived' ? 'Restore ' : 'Archive ') + product.name" [attr.title]="product.status === 'archived' ? 'Restore product' : 'Archive product'" (click)="requestAction(product)"><i class="uil text-base" [class.uil-redo]="product.status === 'archived'" [class.uil-archive]="product.status !== 'archived'" aria-hidden="true"></i></button></div>
+        </article>
+      }
+    </div>
+
+    <footer class="flex flex-col gap-3 border-t border-line px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <p class="text-xs text-muted">Showing {{ rangeStart }}-{{ rangeEnd }} of {{ meta?.total || 0 }}</p>
+      <div class="flex gap-2"><button class="btn btn-secondary min-h-9" type="button" [disabled]="page <= 1" (click)="goToPage(page - 1)"><i class="uil uil-angle-left" aria-hidden="true"></i>Previous</button><span class="grid min-h-9 place-items-center px-2 text-xs font-bold text-muted">Page {{ page }} of {{ pageCount }}</span><button class="btn btn-secondary min-h-9" type="button" [disabled]="page >= pageCount" (click)="goToPage(page + 1)">Next<i class="uil uil-angle-right" aria-hidden="true"></i></button></div>
+    </footer>
+  </section>
+} @else {
+  <section class="panel mt-6 px-5 py-16 text-center"><i class="uil uil-box block text-4xl text-slate-300" aria-hidden="true"></i><p class="mt-3 text-lg font-bold text-ink">No products found</p><p class="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">Try different filters or add a new product to the catalog.</p><a class="btn btn-primary mt-5" routerLink="/products/new"><i class="uil uil-plus" aria-hidden="true"></i>Add product</a></section>
+}
+
+@if (pendingAction; as product) {
+  <div class="fixed inset-0 z-[80] grid place-items-center bg-nav/65 p-4" role="presentation" (click)="cancelAction()">
+    <section class="w-full max-w-md rounded-lg border border-line bg-white p-6 shadow-[0_24px_80px_rgb(17_21_29/0.26)]" role="dialog" aria-modal="true" aria-labelledby="product-action-title" (click)="$event.stopPropagation()">
+      <h2 class="text-xl font-bold tracking-tight text-ink" id="product-action-title">{{ product.status === 'archived' ? 'Restore product?' : 'Archive product?' }}</h2>
+      <p class="mt-3 text-sm leading-6 text-muted">{{ product.status === 'archived' ? 'This product will return as a draft so you can review it before publishing.' : 'This removes the product from the customer storefront without permanently deleting it.' }}</p>
+      <p class="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm font-bold text-ink">{{ product.name }}</p>
+      <div class="mt-6 flex justify-end gap-2"><button class="btn btn-secondary" type="button" (click)="cancelAction()">Cancel</button><button class="btn" [class.btn-primary]="product.status === 'archived'" [class.btn-danger]="product.status !== 'archived'" type="button" [disabled]="actionLoading" (click)="confirmAction()">{{ actionLoading ? 'Working...' : (product.status === 'archived' ? 'Restore product' : 'Archive product') }}</button></div>
+    </section>
+  </div>
+}

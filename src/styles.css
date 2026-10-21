@@ -1,1 +1,126 @@
-/* You can add global styles to this file, and also import other style files */
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Montserrat", "Segoe UI", Arial, sans-serif;
+  --color-kawama: #fb451e;
+  --color-kawama-dark: #db3514;
+  --color-kawama-soft: #fff0eb;
+  --color-ink: #11151d;
+  --color-muted: #5e6572;
+  --color-line: #dfe3e8;
+  --color-canvas: #f4f6f8;
+  --color-nav: #151e28;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    min-width: 320px;
+    background: var(--color-canvas);
+  }
+
+  body {
+    @apply m-0 min-h-[100dvh] bg-canvas font-sans text-sm font-medium text-ink antialiased;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button:not(:disabled),
+  a[href],
+  select:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    @apply cursor-not-allowed opacity-55;
+  }
+
+  .uil::before {
+    line-height: 1;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-3 ring-kawama/30 ring-offset-2;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-4 py-2 text-sm font-bold transition duration-150 active:translate-y-px disabled:active:translate-y-0;
+  }
+
+  .btn-primary {
+    @apply border-kawama bg-kawama text-white hover:border-kawama-dark hover:bg-kawama-dark;
+  }
+
+  .btn-secondary {
+    @apply border-line bg-white text-ink hover:border-slate-400 hover:bg-slate-50;
+  }
+
+  .btn-danger {
+    @apply border-red-700 bg-red-700 text-white hover:border-red-800 hover:bg-red-800;
+  }
+
+  .btn-quiet {
+    @apply border-transparent bg-transparent text-muted hover:bg-slate-100 hover:text-ink;
+  }
+
+  .field {
+    @apply min-h-11 w-full rounded-lg border border-line bg-white px-3 text-sm text-ink shadow-[0_1px_2px_rgb(17_21_29/0.03)] outline-none transition placeholder:text-slate-400 focus:border-kawama focus:ring-3 focus:ring-kawama/15;
+  }
+
+  textarea.field {
+    @apply min-h-28 py-3 leading-6;
+  }
+
+  .field-label {
+    @apply mb-2 block text-sm font-bold text-ink;
+  }
+
+  .field-hint {
+    @apply mt-1.5 text-xs leading-5 text-muted;
+  }
+
+  .field-error {
+    @apply mt-1.5 text-xs font-semibold text-red-700;
+  }
+
+  .panel {
+    @apply rounded-lg border border-line bg-white shadow-[0_1px_3px_rgb(17_21_29/0.04)];
+  }
+
+  .page-heading {
+    @apply text-2xl font-bold tracking-[-0.025em] text-ink sm:text-[1.75rem];
+  }
+
+  .page-copy {
+    @apply mt-1.5 max-w-2xl text-sm leading-6 text-muted;
+  }
+
+  .table-head {
+    @apply bg-slate-50 text-left text-[11px] font-bold uppercase tracking-[0.08em] text-muted;
+  }
+
+  .skeleton {
+    @apply animate-pulse rounded-md bg-slate-200;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
