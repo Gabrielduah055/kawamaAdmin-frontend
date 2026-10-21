@@ -20,6 +20,26 @@ export const routes: Routes = [
         loadComponent: () => import('./features/dashboard/dashboard.page').then((module) => module.DashboardPage),
       },
       {
+        path: 'orders',
+        title: 'Orders | Kawama Admin',
+        loadComponent: () => import('./features/orders/orders.page').then((module) => module.OrdersPage),
+      },
+      {
+        path: 'orders/:id',
+        title: 'Order details | Kawama Admin',
+        loadComponent: () => import('./features/orders/order-detail.page').then((module) => module.OrderDetailPage),
+      },
+      {
+        path: 'customers',
+        title: 'Customers | Kawama Admin',
+        loadComponent: () => import('./features/customers/customers.page').then((module) => module.CustomersPage),
+      },
+      {
+        path: 'customers/:id',
+        title: 'Customer details | Kawama Admin',
+        loadComponent: () => import('./features/customers/customer-detail.page').then((module) => module.CustomerDetailPage),
+      },
+      {
         path: 'products',
         title: 'Products | Kawama Admin',
         loadComponent: () => import('./features/products/products.page').then((module) => module.ProductsPage),

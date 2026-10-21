@@ -11,6 +11,8 @@ export class AdminShellComponent {
   readonly mobileOpen = signal(false);
   readonly navigation = [
     { label: 'Overview', path: '/dashboard', icon: 'uil-estate', exact: true },
+    { label: 'Orders', path: '/orders', icon: 'uil-shopping-bag', exact: false },
+    { label: 'Customers', path: '/customers', icon: 'uil-users-alt', exact: false },
     { label: 'Products', path: '/products', icon: 'uil-box', exact: false },
     { label: 'Categories', path: '/categories', icon: 'uil-apps', exact: true },
     { label: 'Reviews', path: '/reviews', icon: 'uil-star', exact: true },
