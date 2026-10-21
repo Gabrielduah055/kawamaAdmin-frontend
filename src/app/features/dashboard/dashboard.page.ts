@@ -1,27 +1,26 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DashboardSnapshot, Product, Review } from '../../core/admin.models';
+import { DashboardSnapshot, FulfillmentStatus, PaymentStatus } from '../../core/admin.models';
 import { apiErrorMessage } from '../../core/api-error';
 import { LoadingSpinnerComponent } from '../../shared/loading-spinner.component';
 import { DashboardService } from './dashboard.service';
 
 @Component({
   standalone: true,
-  imports: [CommonModule, RouterLink, DatePipe, LoadingSpinnerComponent],
+  imports: [CommonModule, RouterLink, DatePipe, CurrencyPipe, LoadingSpinnerComponent],
   templateUrl: './dashboard.page.html',
 })
 export class DashboardPage implements OnInit {
   loading = true;
   errorMessage = '';
   snapshot: DashboardSnapshot = {
-    totalProducts: 0,
-    activeProducts: 0,
-    draftProducts: 0,
-    categoryCount: 0,
-    pendingReviewCount: 0,
-    recentProducts: [],
-    pendingReviews: [],
+    orders: { total: 0, pendingPayment: 0, paid: 0, refunded: 0, needsAttention: 0, awaitingDelivery: 0, delivered: 0, cancelled: 0 },
+    revenue: { currency: 'GHS', grossProductRevenuePesewas: 0, collectedDeliveryFeesPesewas: 0 },
+    customers: { total: 0, active: 0, repeat: 0 },
+    inventory: { activeProducts: 0, reservedUnits: 0, lowStockProducts: 0, outOfStockProducts: 0 },
+    recentOrders: [],
+    catalog: { totalProducts: 0, draftProducts: 0 },
   };
 
   constructor(private readonly dashboardService: DashboardService) {}
@@ -45,25 +44,40 @@ export class DashboardPage implements OnInit {
     });
   }
 
-  metrics(data: DashboardSnapshot): readonly { label: string; value: number; note: string }[] {
+  metrics(data: DashboardSnapshot): readonly { label: string; value: string | number; note: string; icon: string; tone: string }[] {
     return [
-      { label: 'All products', value: data.totalProducts, note: 'Across every status' },
-      { label: 'Active', value: data.activeProducts, note: 'Visible to customers' },
-      { label: 'Drafts', value: data.draftProducts, note: 'Still being prepared' },
-      { label: 'Categories', value: data.categoryCount, note: 'Active collections' },
-      { label: 'Pending reviews', value: data.pendingReviewCount, note: 'Need moderation' },
+      { label: 'Product revenue', value: this.money(data.revenue.grossProductRevenuePesewas), note: 'Verified Paystack payments', icon: 'uil-chart-growth', tone: 'bg-emerald-50 text-emerald-700' },
+      { label: 'Orders', value: data.orders.total, note: `${data.orders.paid} paid`, icon: 'uil-shopping-bag', tone: 'bg-blue-50 text-blue-700' },
+      { label: 'Customers', value: data.customers.total, note: `${data.customers.repeat} repeat`, icon: 'uil-users-alt', tone: 'bg-violet-50 text-violet-700' },
+      { label: 'Visible products', value: data.inventory.activeProducts, note: `${data.catalog.totalProducts} across all statuses`, icon: 'uil-box', tone: 'bg-orange-50 text-kawama' },
+      { label: 'Awaiting delivery', value: data.orders.awaitingDelivery, note: 'Paid and in progress', icon: 'uil-truck', tone: 'bg-amber-50 text-amber-700' },
+      { label: 'Needs attention', value: data.orders.needsAttention, note: 'Payment review queue', icon: 'uil-exclamation-triangle', tone: 'bg-red-50 text-red-700' },
     ];
   }
 
-  productName(review: Review): string {
-    return typeof review.product === 'string' ? 'Product review' : review.product.name;
+  money(pesewas: number): string {
+    return new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS' }).format(pesewas / 100);
   }
 
-  statusClass(status: Product['status']): string {
-    return status === 'active'
+  paymentClass(status: PaymentStatus): string {
+    return status === 'paid'
       ? 'bg-emerald-50 text-emerald-800'
-      : status === 'draft'
+      : status === 'pending'
         ? 'bg-amber-50 text-amber-800'
-        : 'bg-slate-100 text-slate-700';
+        : status === 'needs_attention'
+          ? 'bg-red-50 text-red-800'
+          : 'bg-slate-100 text-slate-700';
+  }
+
+  fulfillmentClass(status: FulfillmentStatus): string {
+    return status === 'delivered'
+      ? 'text-emerald-700'
+      : status === 'cancelled' || status === 'needs_attention'
+        ? 'text-red-700'
+        : 'text-muted';
+  }
+
+  statusLabel(status: string): string {
+    return status.replaceAll('_', ' ');
   }
 }

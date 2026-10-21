@@ -1,5 +1,12 @@
 export const apiEndpoints = {
   authLogin: '/auth/login',
+  dashboardSummary: '/admin/dashboard/summary',
+  orders: '/admin/orders',
+  orderDetail: '/admin/orders/:id',
+  orderFulfillment: '/admin/orders/:id/fulfillment',
+  orderDelivery: '/admin/orders/:id/delivery',
+  customers: '/admin/customers',
+  customerDetail: '/admin/customers/:id',
   products: '/admin/products',
   productDetail: '/admin/products/:id',
   productRestore: '/admin/products/:id/restore',
