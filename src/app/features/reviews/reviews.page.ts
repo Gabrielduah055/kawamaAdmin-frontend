@@ -68,6 +68,7 @@ export class ReviewsPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.listRequestVersion++;
     this.listRequest?.unsubscribe();
     this.productRequest?.unsubscribe();
     this.replyRequest?.unsubscribe();
@@ -75,8 +76,10 @@ export class ReviewsPage implements OnInit, OnDestroy {
   }
 
   load(): void {
+    if (this.savingReplyId || this.workingId) return;
     const requestVersion = ++this.listRequestVersion;
     this.listRequest?.unsubscribe();
+    this.listRequest = undefined;
     this.loading = true;
     this.errorMessage = '';
     this.listRequest = this.reviewService.getReviews({
@@ -89,18 +92,20 @@ export class ReviewsPage implements OnInit, OnDestroy {
         if (requestVersion !== this.listRequestVersion) return;
         this.reviews = response.data;
         this.meta = response.meta;
+        this.listRequest = undefined;
         this.loading = false;
       },
       error: (error) => {
         if (requestVersion !== this.listRequestVersion) return;
         this.errorMessage = apiErrorMessage(error);
+        this.listRequest = undefined;
         this.loading = false;
       },
     });
   }
 
   setStatus(status: ReviewStatus): void {
-    if (this.status === status) return;
+    if (this.status === status || this.savingReplyId || this.workingId) return;
     this.beginViewChange();
     this.status = status;
     this.page = 1;
@@ -108,6 +113,7 @@ export class ReviewsPage implements OnInit, OnDestroy {
   }
 
   setProduct(event: Event): void {
+    if (this.savingReplyId || this.workingId) return;
     this.beginViewChange();
     this.productId = (event.target as HTMLSelectElement).value;
     this.page = 1;
@@ -115,6 +121,7 @@ export class ReviewsPage implements OnInit, OnDestroy {
   }
 
   goToPage(page: number): void {
+    if (this.savingReplyId || this.workingId) return;
     this.beginViewChange();
     this.page = page;
     this.load();
@@ -151,7 +158,7 @@ export class ReviewsPage implements OnInit, OnDestroy {
   }
 
   openReplyEditor(review: Review): void {
-    if (this.savingReplyId) return;
+    if (this.savingReplyId || this.workingId || this.loading) return;
     this.clearReplyEditor();
     this.editorReviewId = review.id;
     this.replyDraft = review.reply?.text || '';
@@ -163,7 +170,7 @@ export class ReviewsPage implements OnInit, OnDestroy {
   }
 
   saveReply(review: Review): void {
-    if (this.savingReplyId || this.editorReviewId !== review.id) return;
+    if (this.savingReplyId || this.workingId || this.loading || this.editorReviewId !== review.id) return;
 
     const text = this.replyDraft.trim();
     if (text.length < 1 || text.length > 1000) {
@@ -193,6 +200,7 @@ export class ReviewsPage implements OnInit, OnDestroy {
           return;
         }
 
+        this.cancelListRequest();
         this.reviews = this.reviews.map((item) => item.id === review.id ? { ...item, reply: result.reply } : item);
         this.toast.success(review.reply ? 'Public reply updated.' : 'Public reply added.');
         this.savingReplyId = '';
@@ -209,7 +217,7 @@ export class ReviewsPage implements OnInit, OnDestroy {
   }
 
   archive(review: Review): void {
-    if (this.workingId) return;
+    if (this.workingId || this.savingReplyId || this.loading) return;
     const viewVersion = this.viewVersion;
     this.workingId = review.id;
     this.archiveRequest = this.reviewService.archiveReview(review.id).pipe(
@@ -218,10 +226,16 @@ export class ReviewsPage implements OnInit, OnDestroy {
       next: () => {
         this.toast.success('Review archived.');
         this.pendingArchive = undefined;
+        this.workingId = '';
         if (viewVersion === this.viewVersion) this.load();
       },
       error: (error) => this.toast.error(apiErrorMessage(error, 'The review could not be archived.')),
     });
+  }
+
+  requestArchive(review: Review): void {
+    if (this.workingId || this.savingReplyId || this.loading || review.status === 'archived') return;
+    this.pendingArchive = review;
   }
 
   get replyLength(): number {
@@ -247,6 +261,13 @@ export class ReviewsPage implements OnInit, OnDestroy {
   private beginViewChange(): void {
     this.viewVersion++;
     this.clearReplyEditor();
+  }
+
+  private cancelListRequest(): void {
+    this.listRequestVersion++;
+    this.listRequest?.unsubscribe();
+    this.listRequest = undefined;
+    this.loading = false;
   }
 
   private clearReplyEditor(): void {

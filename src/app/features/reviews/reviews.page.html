@@ -6,12 +6,12 @@
 <section class="mt-6 flex flex-col gap-4 rounded-lg border border-line bg-white p-4 lg:flex-row lg:items-center lg:justify-between" aria-label="Review filters">
   <div class="flex max-w-full gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Review status">
     @for (item of statuses; track item.value) {
-      <button class="btn min-h-9 shrink-0" [class.btn-primary]="status === item.value" [class.btn-secondary]="status !== item.value" type="button" role="tab" [attr.aria-selected]="status === item.value" (click)="setStatus(item.value)">{{ item.label }}</button>
+      <button class="btn min-h-9 shrink-0" [class.btn-primary]="status === item.value" [class.btn-secondary]="status !== item.value" type="button" role="tab" [attr.aria-selected]="status === item.value" [disabled]="!!workingId || !!savingReplyId" (click)="setStatus(item.value)">{{ item.label }}</button>
     }
   </div>
   <div class="w-full lg:w-72">
     <label class="sr-only" for="review-product">Filter by product</label>
-    <select class="field" id="review-product" [value]="productId" (change)="setProduct($event)">
+    <select class="field" id="review-product" [value]="productId" [disabled]="!!workingId || !!savingReplyId" (change)="setProduct($event)">
       <option value="">All products</option>
       @for (product of products; track product.id) { <option [value]="product.id">{{ product.name }}</option> }
     </select>
@@ -59,7 +59,7 @@
               <div class="mt-5 max-w-4xl rounded-lg border border-line bg-slate-50 p-4">
                 <label class="text-sm font-bold text-ink" [for]="'reply-' + review.id">{{ review.reply ? 'Edit public reply' : 'Add public reply' }}</label>
                 <p class="mt-1 text-xs leading-5 text-muted">This text will be publicly visible beneath the customer’s product review.</p>
-                <textarea class="field mt-3 min-h-32 resize-y" [id]="'reply-' + review.id" [(ngModel)]="replyDraft" [disabled]="savingReplyId === review.id" aria-describedby="reply-guidance"></textarea>
+                <textarea class="field mt-3 min-h-32 resize-y" [id]="'reply-' + review.id" [(ngModel)]="replyDraft" [disabled]="savingReplyId === review.id || !!workingId || loading" aria-describedby="reply-guidance"></textarea>
                 <div class="mt-2 flex flex-wrap items-start justify-between gap-2">
                   <p class="text-xs text-muted" id="reply-guidance">1–1000 characters after trimming</p>
                   <p class="text-xs" [class.text-red-700]="replyLength > 1000" [class.text-muted]="replyLength <= 1000">{{ replyLength }}/1000</p>
@@ -67,7 +67,7 @@
                 @if (replyError) { <p class="mt-3 text-sm leading-6 text-red-700" role="alert">{{ replyError }}</p> }
                 <div class="mt-4 flex justify-end gap-2">
                   <button class="btn btn-secondary" type="button" [disabled]="savingReplyId === review.id" (click)="cancelReply()">Cancel</button>
-                  <button class="btn btn-primary" type="button" [disabled]="!replyDraftValid || savingReplyId === review.id" (click)="saveReply(review)">{{ savingReplyId === review.id ? 'Saving...' : 'Save reply' }}</button>
+                  <button class="btn btn-primary" type="button" [disabled]="!replyDraftValid || savingReplyId === review.id || !!workingId || loading" (click)="saveReply(review)">{{ savingReplyId === review.id ? 'Saving...' : 'Save reply' }}</button>
                 </div>
               </div>
             }
@@ -75,10 +75,10 @@
 
           <div class="flex shrink-0 flex-wrap gap-2 lg:max-w-72 lg:justify-end">
             @if (editorReviewId !== review.id) {
-              <button class="btn btn-secondary min-h-9 px-3" type="button" [disabled]="!!savingReplyId" (click)="openReplyEditor(review)"><i class="uil uil-comment-alt-edit" aria-hidden="true"></i>{{ review.reply ? 'Edit reply' : 'Reply' }}</button>
+              <button class="btn btn-secondary min-h-9 px-3" type="button" [disabled]="!!savingReplyId || !!workingId || loading" (click)="openReplyEditor(review)"><i class="uil uil-comment-alt-edit" aria-hidden="true"></i>{{ review.reply ? 'Edit reply' : 'Reply' }}</button>
             }
             @if (review.status !== 'archived') {
-              <button class="btn btn-danger h-9 min-h-9 w-9 p-0" type="button" [disabled]="workingId === review.id || !!savingReplyId" aria-label="Archive review" title="Archive review" (click)="pendingArchive = review"><i class="uil uil-archive text-base" aria-hidden="true"></i></button>
+              <button class="btn btn-danger h-9 min-h-9 w-9 p-0" type="button" [disabled]="!!workingId || !!savingReplyId || loading" aria-label="Archive review" title="Archive review" (click)="requestArchive(review)"><i class="uil uil-archive text-base" aria-hidden="true"></i></button>
             }
           </div>
         </div>
@@ -89,9 +89,9 @@
   <footer class="mt-5 flex flex-col gap-3 rounded-lg border border-line bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
     <p class="text-xs text-muted">Showing {{ rangeStart }}-{{ rangeEnd }} of {{ meta?.total || 0 }}</p>
     <div class="flex gap-2">
-      <button class="btn btn-secondary min-h-9" type="button" [disabled]="page <= 1" (click)="goToPage(page - 1)"><i class="uil uil-angle-left" aria-hidden="true"></i>Previous</button>
+      <button class="btn btn-secondary min-h-9" type="button" [disabled]="page <= 1 || !!workingId || !!savingReplyId" (click)="goToPage(page - 1)"><i class="uil uil-angle-left" aria-hidden="true"></i>Previous</button>
       <span class="grid min-h-9 place-items-center px-2 text-xs font-bold text-muted">Page {{ page }} of {{ pageCount }}</span>
-      <button class="btn btn-secondary min-h-9" type="button" [disabled]="page >= pageCount" (click)="goToPage(page + 1)">Next<i class="uil uil-angle-right" aria-hidden="true"></i></button>
+      <button class="btn btn-secondary min-h-9" type="button" [disabled]="page >= pageCount || !!workingId || !!savingReplyId" (click)="goToPage(page + 1)">Next<i class="uil uil-angle-right" aria-hidden="true"></i></button>
     </div>
   </footer>
 } @else {
@@ -109,7 +109,7 @@
       <blockquote class="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm leading-6 text-ink">“{{ review.comment }}”</blockquote>
       <div class="mt-6 flex justify-end gap-2">
         <button class="btn btn-secondary" type="button" (click)="pendingArchive = undefined">Cancel</button>
-        <button class="btn btn-danger" type="button" [disabled]="workingId === review.id" (click)="archive(review)">Archive review</button>
+        <button class="btn btn-danger" type="button" [disabled]="!!workingId || !!savingReplyId || loading" (click)="archive(review)">Archive review</button>
       </div>
     </section>
   </div>
