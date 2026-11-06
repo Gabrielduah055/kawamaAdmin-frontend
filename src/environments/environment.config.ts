@@ -16,7 +16,7 @@ export const apiEndpoints = {
   categoryRestore: '/admin/categories/:id/restore',
   reviews: '/admin/reviews',
   reviewDetail: '/admin/reviews/:id',
-  reviewStatus: '/admin/reviews/:id/status',
+  reviewReply: '/admin/reviews/:id/reply',
   uploadSignature: '/admin/uploads/signature',
   uploads: '/admin/uploads',
 } as const;
