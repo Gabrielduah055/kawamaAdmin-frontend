@@ -138,18 +138,30 @@ export interface ProductInput {
 export interface ReviewProduct {
   readonly _id?: string;
   readonly id?: string;
-  readonly name: string;
-  readonly slug: string;
+  readonly name?: string;
+  readonly slug?: string;
+}
+
+export interface ReviewReply {
+  readonly text: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface ReviewReplyUpdate {
+  readonly id: string;
+  readonly reply: ReviewReply;
 }
 
 export interface Review {
   readonly id: string;
-  readonly product: ReviewProduct | string;
+  readonly product: ReviewProduct | string | null;
   readonly reviewerName: string;
   readonly rating: number;
   readonly comment: string;
   readonly status: ReviewStatus;
   readonly createdAt: string;
+  readonly reply: ReviewReply | null;
   readonly moderatedAt?: string;
   readonly moderatedBy?: string;
 }

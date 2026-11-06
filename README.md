@@ -1,6 +1,6 @@
 # Kawama Admin Frontend
 
-Angular 19 administration console for the Kawama storefront. The interface uses Tailwind CSS 4 and connects to the Kawama API for owner authentication, commerce reporting, order and customer operations, payment visibility, product and category management, Cloudinary uploads, and review moderation.
+Angular 19 administration console for the Kawama storefront. The interface uses Tailwind CSS 4 and connects to the Kawama API for owner authentication, commerce reporting, order and customer operations, payment visibility, product and category management, Cloudinary uploads, and customer reviews with public admin replies.
 
 ## Local development
 
